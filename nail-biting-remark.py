@@ -101,7 +101,7 @@ while cap.isOpened():
     # Displaying nail-biting count
     cv2.putText(frame, f"Caught Nail Biting: {nail_biting_count} times", (10, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
-    cv2.imshow("Eating Nails Recognition", frame)
+    cv2.imshow("Biting Nails Recognition", frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
