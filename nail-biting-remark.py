@@ -4,17 +4,20 @@ import pygame
 import time
 import matplotlib.pyplot as plt
 from datetime import datetime
+import csv
 
-# Initialize pygame for audio
+# Initializing pygame for audio
 pygame.mixer.init()
 
+# Lists to store data for chart and csv
 time_stamps = []
 nail_biting_counts = []
 
-# Initialize Mediapipe Hands module
+# Initializing Mediapipe Hands module
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
 
+# Initializing Mediapipe Face Detection module
 mp_face_detection = mp.solutions.face_detection
 face_detection = mp_face_detection.FaceDetection()
 
@@ -68,13 +71,15 @@ while cap.isOpened():
                     hand_rect_right = palm_center_x + square_size
                     hand_rect_bottom = palm_center_y + square_size
                     
+                    # Draw a red square around the hand
                     cv2.rectangle(frame, (hand_rect_left, hand_rect_top),
                                 (hand_rect_right, hand_rect_bottom), (0, 0, 255), 2)
                     
                     mouth_region_x_range = range(mouth_rect_left, mouth_rect_right)
                     mouth_region_y_range = range(mouth_rect_top, mouth_rect_bottom)
                     
-                    hand_in_mouth_region = (hand_rect_left in mouth_region_x_range or hand_rect_right in mouth_region_x_range) and (hand_rect_top in mouth_region_y_range or hand_rect_bottom in mouth_region_y_range)
+                    hand_in_mouth_region = (hand_rect_left in mouth_region_x_range or hand_rect_right in mouth_region_x_range) \
+                                            and (hand_rect_top in mouth_region_y_range or hand_rect_bottom in mouth_region_y_range)
                     
                     if hand_in_mouth_region and not pygame.mixer.music.get_busy():
                         if not printed:
@@ -84,18 +89,16 @@ while cap.isOpened():
                         pygame.mixer.music.play()
                         nail_biting_count += 1 
                         
-                        time_stamps.append(datetime.now())
+                        time_stamps.append(time.strftime("%d-%m-%Y %H:%M:%S"))
                         nail_biting_counts.append(nail_biting_count)
                     else:
                         printed = False
             else:
                 printed = False
     else:
-        pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
         printed = False
         
-    # Display nail-biting count
+    # Displaying nail-biting count
     cv2.putText(frame, f"Caught Nail Biting: {nail_biting_count} times", (10, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
     cv2.imshow("Eating Nails Recognition", frame)
@@ -103,7 +106,7 @@ while cap.isOpened():
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
     
-    # Display the nail-biting count chart
+    # Displaying the timestamp/nail-biting count chart
     plt.clf()
     plt.plot(time_stamps, nail_biting_counts, marker='o')
     plt.xlabel('Time')
@@ -111,6 +114,13 @@ while cap.isOpened():
     plt.title('Nail Biting Detection Chart')
     plt.xticks(rotation=45)
     plt.tight_layout()
+    
+    # Save data to CSV
+    with open("nail_biting_data.csv", "w", newline="") as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(["Time", "Nail Biting Count"])
+        for t, count in zip(time_stamps, nail_biting_counts):
+            csv_writer.writerow([t, count])
 
     # Show the chart in a separate window
     plt.pause(0.01)
