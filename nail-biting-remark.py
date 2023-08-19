@@ -1,10 +1,27 @@
 import cv2
+import os
 import mediapipe as mp
 import pygame
 import time
 import matplotlib.pyplot as plt
-from datetime import datetime
 import csv
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+import pyautogui
+
+# Email configuration
+smtp_server = "smtp.gmail.com"                  # Email server
+smtp_port = 587                                 # 587 for TLS - 465 for SSL
+smtp_username = "youremail@gmail.com"           # Your email address
+smtp_password = "your-password"                 # Email password or App-specific password
+
+sender_email = "youremail@gmail.com"            # Sender's email
+receiver_email = "receiveremail@gmail.com"      # Recipient's email
+subject = "Nail Biting Detected!"               # Email subject
+
+n_screenshot = 0
 
 # Initializing pygame for audio
 pygame.mixer.init()
@@ -20,6 +37,13 @@ hands = mp_hands.Hands()
 # Initializing Mediapipe Face Detection module
 mp_face_detection = mp.solutions.face_detection
 face_detection = mp_face_detection.FaceDetection()
+
+# # Replace this with the URL provided by the IP Webcam app
+# ip_cam_url = "https://192.168.1.4:8080/video"
+
+# # Open the remote camera feed using OpenCV
+# cap = cv2.VideoCapture(ip_cam_url)
+
 
 # Initialize OpenCV for camera capture
 cap = cv2.VideoCapture(0)
@@ -83,8 +107,37 @@ while cap.isOpened():
                     
                     if hand_in_mouth_region and not pygame.mixer.music.get_busy():
                         if not printed:
+                            # Create the email content
+                            message = f"Nail biting detected at {time.strftime('%H:%M:%S')}!"
+                            msg = MIMEMultipart()
+                            msg["From"] = sender_email
+                            msg["To"] = receiver_email
+                            msg["Subject"] = subject
+                            msg.attach(MIMEText(message, "plain"))
+                            # Capture a screenshot
+                            screenshot_path = f"screenshot{n_screenshot}.png"
+                            pyautogui.screenshot(screenshot_path)
+                            n_screenshot += 1
+                            # Attach the screenshot to the email
+                            with open(screenshot_path, "rb") as screenshot_file:
+                                screenshot_attachment = MIMEApplication(screenshot_file.read(), Name=os.path.basename(screenshot_path))
+                                screenshot_attachment["Content-Disposition"] = f"attachment; filename={os.path.basename(screenshot_path)}"
+                                msg.attach(screenshot_attachment)
+                                
                             print(f"Nail biting detected at {time.strftime('%H:%M:%S')}!")
                             printed = True
+
+                            # Connect to the SMTP server
+                            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                                server.starttls()  # Start TLS encryption
+                                server.login(smtp_username, smtp_password)  # Login to the server
+
+                                # Send the email
+                                server.sendmail(sender_email, receiver_email, msg.as_string())
+
+                            print("Email sent successfully.")
+                            # Delete the temporary screenshot file
+                            os.remove(screenshot_path)
                         pygame.mixer.music.load(music_filename)
                         pygame.mixer.music.play()
                         nail_biting_count += 1 
