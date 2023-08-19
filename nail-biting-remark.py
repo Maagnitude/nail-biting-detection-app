@@ -69,10 +69,11 @@ while cap.isOpened():
             ih, iw, _ = frame.shape
             x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
             
-            mouth_rect_left = x
-            mouth_rect_top = y
-            mouth_rect_right = x + w
-            mouth_rect_bottom = y + h
+            # Offsets for the mouth region
+            mouth_rect_left = x + 70
+            mouth_rect_top = y + 130
+            mouth_rect_right = x + w - 30
+            mouth_rect_bottom = y + h - 30
             
             # Draw a green square around the mouth
             cv2.rectangle(frame, (mouth_rect_left, mouth_rect_top),
