@@ -11,7 +11,6 @@ sound_controller = SoundController()
 plotter = PlotData()
 
 class NailBitingDetection():
-
     
     def __init__(self):
         # Initializing Mediapipe Hands module
@@ -119,7 +118,7 @@ class NailBitingDetection():
                                     # Send an email once
                                     if email_dict is not None:
                                         email = Email(username=email_dict["username"], password=email_dict["password"], receiver_email=email_dict["receiver_email"])
-                                        email.send_email()
+                                        email.send_email(frame)
                                     
                                     # Print on the console once
                                     print(f"Nail biting detected at {time.strftime('%H:%M:%S')}!")

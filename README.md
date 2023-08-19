@@ -18,3 +18,11 @@ python app.py <receiver-email>
 Enter your email address: <your-email>
 Enter your email password: <your-app-specific-password>
 ```
+
+## Creating your App Specific Password
+1. Go to "https://myaccount.google.com/apppasswords"
+2. Connect with your email account
+3. Select app > Mail
+4. Select device > Windows Computer
+5. Hit GENERATE
+6. Save the 16-letter password, and insert it in the "Enter your email password" field.

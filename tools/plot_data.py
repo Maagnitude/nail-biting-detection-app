@@ -7,6 +7,7 @@ class PlotData():
         self.time_stamps = []
         self.biting_durations = []
     
+    
     def plot_data(self, hand_in_mouth_region):
         if self.biting_durations.__len__() > 0 and self.time_stamps.__len__() > 0 and not hand_in_mouth_region:
             # Displaying the timestamp/nail-biting count chart

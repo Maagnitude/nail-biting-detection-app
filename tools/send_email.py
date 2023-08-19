@@ -1,9 +1,9 @@
 import os
+import cv2
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-import pyautogui
 import time
 
 
@@ -21,7 +21,7 @@ class Email():
         self.message = f"Nail biting detected at {time.strftime('%H:%M:%S')}!"
         
         
-    def _create_email(self):
+    def _create_email(self, frame):
         # Create the email content
         msg = MIMEMultipart()
         msg["From"] = self.sender_email
@@ -35,7 +35,7 @@ class Email():
             os.makedirs(screenshots_dir)
             
         screenshot_path = f"{screenshots_dir}/screenshot{self.n_screenshot}.png"
-        pyautogui.screenshot(screenshot_path)
+        cv2.imwrite(screenshot_path, frame)
         self.n_screenshot += 1
         print(f"Screenshot saved as '{screenshot_path}'")
         
@@ -48,11 +48,12 @@ class Email():
         return msg
         
         
-    def send_email(self):
-        msg = self._create_email() 
+    def send_email(self, frame):
+        msg = self._create_email(frame) 
         with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
             server.starttls()                                       # Start TLS encryption
             server.login(self.smtp_username, self.smtp_password)    # Login to the server
             print(f"Connected to {self.smtp_server} server!")
             server.sendmail(self.sender_email, self.receiver_email, msg.as_string())
             print(f"Email sent successfully to {self.receiver_email}!")
+            server.quit()

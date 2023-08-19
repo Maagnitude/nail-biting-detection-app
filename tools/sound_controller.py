@@ -17,6 +17,7 @@ class SoundController():
     def is_playing(self):
         return pygame.mixer.music.get_busy()
     
+    
     def close(self):
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()

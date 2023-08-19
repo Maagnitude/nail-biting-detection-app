@@ -2,8 +2,7 @@ from tools.sound_controller import SoundController
 
 class Reward():
     
-    def __init__(self):
-        
+    def __init__(self):  
         self.reward_intervals = {
             10: "Nail Biting Rookie",   # 10 seconds without biting
             20: "Biting Avoider",       # 20 seconds without biting
