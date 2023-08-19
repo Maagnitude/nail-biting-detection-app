@@ -38,6 +38,23 @@ hands = mp_hands.Hands()
 mp_face_detection = mp.solutions.face_detection
 face_detection = mp_face_detection.FaceDetection()
 
+# Reward system
+reward_intervals = {
+    10: "Nail Biting Rookie",   # 10 seconds without biting
+    20: "Biting Avoider",       # 20 seconds without biting
+    30: "Iron finger",          # 30 seconds without biting
+    40: "Nail Guardian"         # 40 seconds without biting
+}
+
+reward_sounds = {
+    "Nail Biting Rookie": "resources/rookie.mp3",
+    "Biting Avoider": "resources/avoider.mp3",
+    "Iron finger": "resources/iron_finger.mp3",
+    "Nail Guardian": "resources/guardian.mp3"
+}
+
+earned_rewards = []
+
 # # Replace this with the URL provided by the IP Webcam app
 # ip_cam_url = "https://192.168.1.4:8080/video"
 
@@ -51,6 +68,8 @@ cap = cv2.VideoCapture(0)
 printed = False
 music_filename = "resources/got_caught.mp3"
 nail_biting_count = 0
+last_bite_time = time.time()
+time_since_last_bite = 0.0
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -71,9 +90,9 @@ while cap.isOpened():
             
             # Offsets for the mouth region
             mouth_rect_left = x + 70
-            mouth_rect_top = y + 130
+            mouth_rect_top = y + 110
             mouth_rect_right = x + w - 30
-            mouth_rect_bottom = y + h - 30
+            mouth_rect_bottom = y + h - 10
             
             # Draw a green square around the mouth
             cv2.rectangle(frame, (mouth_rect_left, mouth_rect_top),
@@ -90,7 +109,7 @@ while cap.isOpened():
                     palm_center_x = int(sum([lm.x for lm in palm_landmarks]) / len(palm_landmarks) * frame.shape[1])
                     palm_center_y = int(sum([lm.y for lm in palm_landmarks]) / len(palm_landmarks) * frame.shape[0])
 
-                    square_size = 30
+                    square_size = 35
                     hand_rect_left = palm_center_x - square_size
                     hand_rect_top = palm_center_y - square_size
                     hand_rect_right = palm_center_x + square_size
@@ -109,36 +128,39 @@ while cap.isOpened():
                     if hand_in_mouth_region and not pygame.mixer.music.get_busy():
                         if not printed:
                             # Create the email content
-                            message = f"Nail biting detected at {time.strftime('%H:%M:%S')}!"
-                            msg = MIMEMultipart()
-                            msg["From"] = sender_email
-                            msg["To"] = receiver_email
-                            msg["Subject"] = subject
-                            msg.attach(MIMEText(message, "plain"))
-                            # Capture a screenshot
-                            screenshot_path = f"screenshot{n_screenshot}.png"
-                            pyautogui.screenshot(screenshot_path)
-                            n_screenshot += 1
-                            # Attach the screenshot to the email
-                            with open(screenshot_path, "rb") as screenshot_file:
-                                screenshot_attachment = MIMEApplication(screenshot_file.read(), Name=os.path.basename(screenshot_path))
-                                screenshot_attachment["Content-Disposition"] = f"attachment; filename={os.path.basename(screenshot_path)}"
-                                msg.attach(screenshot_attachment)
+                            # message = f"Nail biting detected at {time.strftime('%H:%M:%S')}!"
+                            # msg = MIMEMultipart()
+                            # msg["From"] = sender_email
+                            # msg["To"] = receiver_email
+                            # msg["Subject"] = subject
+                            # msg.attach(MIMEText(message, "plain"))
+                            # # Capture a screenshot
+                            # screenshot_path = f"screenshot{n_screenshot}.png"
+                            # pyautogui.screenshot(screenshot_path)
+                            # n_screenshot += 1
+                            # # Attach the screenshot to the email
+                            # with open(screenshot_path, "rb") as screenshot_file:
+                            #     screenshot_attachment = MIMEApplication(screenshot_file.read(), Name=os.path.basename(screenshot_path))
+                            #     screenshot_attachment["Content-Disposition"] = f"attachment; filename={os.path.basename(screenshot_path)}"
+                            #     msg.attach(screenshot_attachment)
                                 
                             print(f"Nail biting detected at {time.strftime('%H:%M:%S')}!")
                             printed = True
+                            last_bite_time = time.time()
+                            time_since_last_bite = 0.0
+                            earned_rewards = []
 
                             # Connect to the SMTP server
-                            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                                server.starttls()  # Start TLS encryption
-                                server.login(smtp_username, smtp_password)  # Login to the server
+                            # with smtplib.SMTP(smtp_server, smtp_port) as server:
+                            #     server.starttls()  # Start TLS encryption
+                            #     server.login(smtp_username, smtp_password)  # Login to the server
 
-                                # Send the email
-                                server.sendmail(sender_email, receiver_email, msg.as_string())
+                            #     # Send the email
+                            #     server.sendmail(sender_email, receiver_email, msg.as_string())
 
-                            print("Email sent successfully.")
-                            # Delete the temporary screenshot file
-                            os.remove(screenshot_path)
+                            # print("Email sent successfully.")
+                            # # Delete the temporary screenshot file
+                            # os.remove(screenshot_path)
                         pygame.mixer.music.load(music_filename)
                         pygame.mixer.music.play()
                         nail_biting_count += 1 
@@ -146,14 +168,33 @@ while cap.isOpened():
                         time_stamps.append(time.strftime("%d-%m-%Y %H:%M:%S"))
                         nail_biting_counts.append(nail_biting_count)
                     else:
+                        time_since_last_bite = time.time() - last_bite_time
                         printed = False
             else:
+                time_since_last_bite = time.time() - last_bite_time
+                # Check for earned rewards
+                for interval, reward in reward_intervals.items():
+                    if time_since_last_bite >= interval and reward not in earned_rewards and not pygame.mixer.music.get_busy():
+                        earned_rewards.append(reward)
+                        # Print the reward and play a sound
+                        print(f"Congratulations! You earned the reward: {reward}")
+                        pygame.mixer.music.load(reward_sounds[reward])
+                        pygame.mixer.music.play()
                 printed = False
     else:
         printed = False
         
+    # Displaying nail-biting count and rewards
+    if earned_rewards.__len__() > 0:
+        cv2.putText(frame, f"Title: {earned_rewards[-1]}", (10, 60), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
+    else:
+        cv2.putText(frame, "Title: Noob", (10, 60), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
+        
     # Displaying nail-biting count
-    cv2.putText(frame, f"Caught Nail Biting: {nail_biting_count} times", (10, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, f"Caught: {nail_biting_count} times", (10, 30), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 0, 0), 2, cv2.LINE_AA)
+    
+    # Displaying no-biting timer
+    cv2.putText(frame, f"Clean for: {time_since_last_bite:.0f}s.", (10, 460), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
 
     cv2.imshow("Biting Nails Recognition", frame)
 
